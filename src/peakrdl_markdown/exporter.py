@@ -4,7 +4,7 @@ __authors__ = [
     "Marek Pikuła <marek at serenitycode.dev>",
     "Maciej Dudek <mdudek at antmicro.com>",
 ]
-
+__version__ = "1.0.0"
 from collections import OrderedDict
 from dataclasses import dataclass
 from functools import reduce
@@ -51,9 +51,56 @@ class MarkdownExporter:  # pylint: disable=too-few-public-methods
             title -- heading title
 
         Returns:
-            Formatted Markdown heading.
         """
-        return "\n" + "#" * depth + f" {title}\n\n"
+        return f"{'#' * depth} {title}\n\n"
+
+    def _generate_register(self, reg_node: RegNode):
+        """Generate Markdown for a register node.
+
+        Arguments:
+            reg_node -- The register node to generate Markdown for.
+
+        Returns:
+        """
+        # Check if the register is part of an array
+        if reg_node.is_array:
+            # Only generate documentation for the first item in the array
+            if reg_node.array_dimensions[0] > 1:
+                return self._generate_single_register(reg_node, 0)
+        else:
+            return self._generate_single_register(reg_node)
+
+    def _generate_single_register(self, reg_node: RegNode, index: Optional[int] = None):
+        """Generate Markdown for a single register node.
+
+        Arguments:
+            reg_node -- The register node to generate Markdown for.
+            index -- Optional index if the register is part of an array.
+
+        Returns:
+        """
+        # Generate the Markdown for the register
+        # If index is provided, include it in the title
+        title = reg_node.name
+        if index is not None:
+            title += f"[{index}]"
+        heading = self._heading(2, title)
+        # Add more details about the register here
+        return heading
+
+    def export(self, root_node: RootNode):
+        """Export the RDL structure to Markdown.
+
+        Arguments:
+            root_node -- The root node of the RDL structure.
+
+        Returns:
+        """
+        markdown = ""
+        for node in root_node.descendants:
+            if isinstance(node, RegNode):
+                markdown += self._generate_register(node)
+        return markdown
 
     @staticmethod
     def _addrnode_info(node: AddressableNode):
